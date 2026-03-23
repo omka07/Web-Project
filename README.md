@@ -1,45 +1,33 @@
-#🎯 QuizRoom — Real-Time Quiz Platform
+# 🎯 QuizRoom — Real-Time Quiz Platform
 
 QuizRoom is a lightweight real-time quiz application inspired by Kahoot-style games. It allows a host to create quiz sessions and multiple players to join using a unique room code, answer questions simultaneously, and compete on a live leaderboard.
 
-##🚀 Features
+## 🚀 Features
 
-🧑‍🏫 Create and manage quiz sessions (host mode)
+- 🧑‍🏫 Create and manage quiz sessions (host mode)
+- 🔑 Join game rooms via unique code
+- ❓ Multiple-choice questions
+- ⏱️ Timed answering system
+- 🏆 Dynamic leaderboard based on speed and accuracy
 
-🔑 Join game rooms via unique code
+## 🛠️ Tech Stack
 
-❓ Multiple-choice questions
+- Frontend: Angular
+- Backend: Django
+- Database: PostgreSQL
 
-⏱️ Timed answering system
+## 📌 Project Goal
 
-🏆 Dynamic leaderboard based on speed and accuracy
+- The goal of this project is to demonstrate:
+- real-time client-server interaction
+- scalable backend architecture
+- clean code practices
 
-##🛠️ Tech Stack
+## 👥 Use Case
 
-Frontend: Angular
+- This application can be used for:
+- educational quizze
+- classroom engagement
+- fun multiplayer trivia games
 
-Backend: Django
-
-Database: PostgreSQL
-
-##📌 Project Goal
-
-The goal of this project is to demonstrate:
-
-real-time client-server interaction
-
-scalable backend architecture
-
-clean code practices
-
-##👥 Use Case
-
-This application can be used for:
-
-educational quizzes
-
-classroom engagement
-
-fun multiplayer trivia games
-
-##Team members: Umirzakov Omar Serikov Rasul Uteuliyeva Gauhar
+## Team members: Umirzakov Omar, Serikov Rasul, Uteuliyeva Gauhar
