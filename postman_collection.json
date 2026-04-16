@@ -1,0 +1,246 @@
+{
+  "info": {
+    "name": "Quiz System API",
+    "description": "Postman Collection for the Quiz System Django Backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"adminpassword\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/auth/login/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "auth", "login/"]
+            }
+          },
+          "response": [
+            {
+              "name": "Successful Login",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"adminpassword\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8000/api/auth/login/",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8000",
+                  "path": ["api", "auth", "login/"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"token\": \"9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/api/auth/logout/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "auth", "logout/"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quizzes",
+      "item": [
+        {
+          "name": "List Quizzes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/api/quizzes/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "quizzes/"]
+            }
+          },
+          "response": [
+            {
+              "name": "Quizzes List",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Angular Basics\",\n    \"category\": 1,\n    \"created_by\": 1,\n    \"created_at\": \"2023-10-24T12:00:00Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Create Quiz",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Quiz\",\n  \"category\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/quizzes/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "quizzes/"]
+            }
+          }
+        },
+        {
+          "name": "Get Quiz Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/api/quizzes/1/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "quizzes", "1/"]
+            }
+          }
+        },
+        {
+          "name": "Update Quiz",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Quiz Title\",\n  \"category\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/quizzes/1/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "quizzes", "1/"]
+            }
+          }
+        },
+        {
+          "name": "Delete Quiz",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/api/quizzes/1/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "quizzes", "1/"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Statistics",
+      "item": [
+        {
+          "name": "Quiz Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/api/quizzes/stats/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "quizzes", "stats/"]
+            }
+          }
+        },
+        {
+          "name": "User Score",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/api/user/score/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "user", "score/"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
