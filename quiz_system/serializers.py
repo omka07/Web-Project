@@ -10,7 +10,11 @@ class CategorySerializer(serializers.ModelSerializer):
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = ['id', 'text', 'is_correct']
+        # `is_correct` is intentionally NOT exposed to clients so players
+        # cannot peek at the answer in DevTools. Correctness is only read
+        # server-side during score computation (see views.submit_attempt)
+        # and is editable through Django admin.
+        fields = ['id', 'text']
 
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, read_only=True)

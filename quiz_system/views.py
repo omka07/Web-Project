@@ -7,14 +7,28 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 
-from .models import Quiz, Category, Attempt
+from .models import Quiz, Category, Attempt, Question, Choice
 from .serializers import (
-    QuizSerializer, 
-    CategorySerializer, 
-    QuizStatisticsSerializer, 
+    QuizSerializer,
+    CategorySerializer,
+    QuizStatisticsSerializer,
     UserScoreSerializer,
     AttemptSerializer
 )
+
+# Scoring constants — kept here so the formula is easy to audit.
+QUESTION_TIME_LIMIT_MS = 20000  # 20 seconds per question
+BASE_POINTS = 500               # awarded for any correct answer
+SPEED_BONUS = 500               # additional points scaled by how fast it came in
+
+
+def _score_for_answer(choice: Choice | None, response_time_ms: int) -> int:
+    """Compute points for a single answer. Server-authoritative."""
+    if choice is None or not choice.is_correct:
+        return 0
+    rt = max(0, min(int(response_time_ms or 0), QUESTION_TIME_LIMIT_MS))
+    remaining_ratio = (QUESTION_TIME_LIMIT_MS - rt) / QUESTION_TIME_LIMIT_MS
+    return round(BASE_POINTS + SPEED_BONUS * remaining_ratio)
 
 # 2 Function-Based Views (FBV)
 
@@ -72,21 +86,75 @@ def join_room(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def submit_attempt(request, pk):
+    """
+    Server-authoritative scoring.
+
+    Client payload:
+        {
+          "nickname": "alice",
+          "answers": [
+            {"question_id": 3, "choice_id": 11, "response_time_ms": 1450},
+            {"question_id": 4, "choice_id": null, "response_time_ms": 20000},
+            ...
+          ]
+        }
+
+    The client never tells us the score — we recompute it by looking up each
+    choice's is_correct flag and applying the speed-weighted formula.
+    """
     quiz = get_object_or_404(Quiz, pk=pk)
-    
-    # We allow the user to provide a nickname and a score
-    data = {
-        'quiz': quiz.id,
-        'nickname': request.data.get('nickname', ''),
-        'score': request.data.get('score', 0)
-    }
-    
-    serializer = AttemptSerializer(data=data)
-    if serializer.is_valid():
-        # Save with the authenticated user if available
-        serializer.save(created_by=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    nickname = (request.data.get('nickname') or '').strip()
+    answers = request.data.get('answers') or []
+    if not isinstance(answers, list):
+        return Response({'detail': 'answers must be a list.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Preload the quiz's questions and choices so we can validate without
+    # issuing one query per answer.
+    question_ids = {q.id for q in quiz.questions.all()}
+    choices_by_id = {c.id: c for c in Choice.objects.filter(question__quiz=quiz)}
+
+    total_score = 0
+    correct_count = 0
+
+    for entry in answers:
+        if not isinstance(entry, dict):
+            continue
+        question_id = entry.get('question_id')
+        choice_id = entry.get('choice_id')
+        response_time_ms = entry.get('response_time_ms', QUESTION_TIME_LIMIT_MS)
+
+        # Ignore answers for questions that don't belong to this quiz.
+        if question_id not in question_ids:
+            continue
+
+        choice = None
+        if choice_id is not None:
+            candidate = choices_by_id.get(choice_id)
+            # Make sure the choice actually belongs to the claimed question.
+            if candidate is not None and candidate.question_id == question_id:
+                choice = candidate
+
+        points = _score_for_answer(choice, response_time_ms)
+        if points > 0:
+            correct_count += 1
+        total_score += points
+
+    attempt = Attempt.objects.create(
+        quiz=quiz,
+        nickname=nickname,
+        created_by=request.user if request.user.is_authenticated else None,
+        score=total_score,
+    )
+
+    return Response(
+        {
+            'id': attempt.id,
+            'score': total_score,
+            'correct_count': correct_count,
+            'total': len(question_ids),
+        },
+        status=status.HTTP_201_CREATED,
+    )
 
 # 2 Class-Based Views (CBV)
 

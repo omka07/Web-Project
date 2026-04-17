@@ -13,7 +13,21 @@ export interface Category {
 export interface Choice {
   id: number;
   text: string;
-  is_correct: boolean;
+  // `is_correct` is intentionally absent: the backend no longer exposes it
+  // to clients so players can't peek at the answer.
+}
+
+export interface AnswerSubmission {
+  question_id: number;
+  choice_id: number | null;
+  response_time_ms: number;
+}
+
+export interface AttemptResult {
+  id: number;
+  score: number;
+  correct_count: number;
+  total: number;
 }
 
 export interface Question {
