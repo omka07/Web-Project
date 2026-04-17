@@ -1,8 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-const ROOM_CODE_PATTERN = /^\d{6}$/;
+import { ApiService } from '../../services/api.service';
+import { PlayerService } from '../../services/player.service';
 
 @Component({
   selector: 'app-join-room',
@@ -11,7 +11,7 @@ const ROOM_CODE_PATTERN = /^\d{6}$/;
   template: `
     <div class="card join-card">
       <h2>Join a Room</h2>
-      <p class="hint">Enter the 6-digit code shown by the host.</p>
+      <p class="hint">Enter the 6-character code and your nickname.</p>
 
       @if (errorMessage) {
         <div class="error-msg">{{ errorMessage }}</div>
@@ -22,18 +22,29 @@ const ROOM_CODE_PATTERN = /^\d{6}$/;
         <input
           id="room-code"
           type="text"
-          inputmode="numeric"
           maxlength="6"
           autocomplete="off"
           [(ngModel)]="code"
           (input)="onInput()"
-          (keydown.enter)="onJoin()"
-          placeholder="123456"
+          placeholder="ABCDEF"
         >
       </div>
 
-      <button (click)="onJoin()" [disabled]="!isValid()">
-        Join
+      <div class="form-group">
+        <label for="nickname">Nickname</label>
+        <input
+          id="nickname"
+          type="text"
+          maxlength="16"
+          autocomplete="off"
+          [(ngModel)]="nickname"
+          (keydown.enter)="onJoin()"
+          placeholder="Your name"
+        >
+      </div>
+
+      <button class="btn-primary" (click)="onJoin()" [disabled]="!isValid() || isLoading">
+        @if (isLoading) { Joining... } @else { Join }
       </button>
     </div>
   `,
@@ -55,35 +66,58 @@ const ROOM_CODE_PATTERN = /^\d{6}$/;
       background: #f8d7da;
       border-radius: 4px;
     }
-    input {
+    #room-code {
       letter-spacing: 0.25rem;
       font-size: 1.5rem;
       text-align: center;
+      text-transform: uppercase;
     }
   `]
 })
 export class JoinRoomComponent {
   private router = inject(Router);
+  private apiService = inject(ApiService);
+  private playerService = inject(PlayerService);
 
   code = '';
+  nickname = '';
   errorMessage = '';
+  isLoading = false;
 
   onInput() {
-    this.code = this.code.replace(/\D/g, '').slice(0, 6);
+    this.code = this.code.toUpperCase().slice(0, 6);
     if (this.errorMessage) {
       this.errorMessage = '';
     }
   }
 
   isValid(): boolean {
-    return ROOM_CODE_PATTERN.test(this.code);
+    return this.code.length === 6 && this.nickname.trim().length >= 2;
   }
 
   onJoin() {
     if (!this.isValid()) {
-      this.errorMessage = 'Room code must be exactly 6 digits.';
+      this.errorMessage = 'Enter a valid 6-character code and a nickname.';
       return;
     }
-    this.router.navigate(['/room', this.code]);
+    
+    this.isLoading = true;
+    this.apiService.joinRoom(this.code).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        // Save nickname locally using PlayerService
+        this.playerService.setNickname(this.nickname.trim());
+        // Navigate to the take quiz page
+        this.router.navigate(['/quiz', response.quiz_id, 'take']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        if (err.status === 404) {
+          this.errorMessage = 'Invalid Room Code';
+        } else {
+          this.errorMessage = 'An error occurred while joining.';
+        }
+      }
+    });
   }
 }

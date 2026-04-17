@@ -32,6 +32,14 @@ export class ApiService {
     return this.http.delete<void>(`${this.baseUrl}/quizzes/${id}/`);
   }
 
+  joinRoom(room_code: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/quizzes/join/`, { room_code });
+  }
+
+  submitAttempt(quizId: number, score: number, nickname: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/quizzes/${quizId}/attempt/`, { score, nickname });
+  }
+
   // --- Stats and Score ---
 
   getQuizStats(): Observable<QuizStatistics> {

@@ -12,7 +12,8 @@ from .serializers import (
     QuizSerializer, 
     CategorySerializer, 
     QuizStatisticsSerializer, 
-    UserScoreSerializer
+    UserScoreSerializer,
+    AttemptSerializer
 )
 
 # 2 Function-Based Views (FBV)
@@ -49,6 +50,43 @@ def quiz_statistics(request):
     serializer = QuizStatisticsSerializer(data)
     return Response(serializer.data)
 
+
+@api_view(['POST'])
+# We might want this accessible without authentication, or keep IsAuthenticated if joining requires login
+@permission_classes([IsAuthenticated])
+def join_room(request):
+    room_code = request.data.get('room_code')
+    if not room_code:
+        return Response({'detail': 'Room code is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        quiz = Quiz.objects.get(room_code=room_code)
+        return Response({
+            'quiz_id': quiz.id,
+            'title': quiz.title,
+            'room_code': quiz.room_code
+        })
+    except Quiz.DoesNotExist:
+        return Response({'detail': 'Invalid Room Code'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_attempt(request, pk):
+    quiz = get_object_or_404(Quiz, pk=pk)
+    
+    # We allow the user to provide a nickname and a score
+    data = {
+        'quiz': quiz.id,
+        'nickname': request.data.get('nickname', ''),
+        'score': request.data.get('score', 0)
+    }
+    
+    serializer = AttemptSerializer(data=data)
+    if serializer.is_valid():
+        # Save with the authenticated user if available
+        serializer.save(created_by=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 2 Class-Based Views (CBV)
 

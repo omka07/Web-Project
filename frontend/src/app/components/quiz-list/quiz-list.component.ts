@@ -43,7 +43,14 @@ import { Quiz } from '../../interfaces/models';
         <div class="quiz-grid">
           @for (quiz of quizzes; track quiz.id) {
             <div class="card quiz-card">
-              <h3>{{ quiz.title }}</h3>
+              <div class="card-header">
+                <h3>{{ quiz.title }}</h3>
+                @if (quiz.room_code) {
+                  <span class="room-code-badge" (click)="copyCode(quiz.room_code)" title="Click to copy">
+                    Code: <strong>{{ quiz.room_code }}</strong>
+                  </span>
+                }
+              </div>
               <p class="meta">Category ID: {{ quiz.category }}</p>
               <div class="actions">
                 <button class="btn-secondary" (click)="viewQuiz(quiz.id)">View Details</button>
@@ -88,6 +95,28 @@ import { Quiz } from '../../interfaces/models';
     .quiz-card {
       display: flex;
       flex-direction: column;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .card-header h3 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+    .room-code-badge {
+      background-color: #e9ecef;
+      color: #495057;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .room-code-badge:hover {
+      background-color: #ced4da;
     }
     .quiz-card .meta {
       color: #6c757d;
@@ -188,5 +217,14 @@ export class QuizListComponent implements OnInit {
 
   joinRoom() {
     this.router.navigate(['/join']);
+  }
+
+  copyCode(code: string) {
+    navigator.clipboard.writeText(code).then(() => {
+      // Optional: Add a small toast or visual feedback here
+      console.log('Room code copied to clipboard');
+    }).catch(err => {
+      console.error('Could not copy text: ', err);
+    });
   }
 }

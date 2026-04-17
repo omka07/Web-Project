@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Quiz, Question, Attempt
+from .models import Category, Quiz, Question, Attempt, Choice
 
 # 2 ModelSerializers
 class CategorySerializer(serializers.ModelSerializer):
@@ -7,11 +7,31 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'description']
 
+class ChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Choice
+        fields = ['id', 'text', 'is_correct']
+
+class QuestionSerializer(serializers.ModelSerializer):
+    choices = ChoiceSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Question
+        fields = ['id', 'text', 'choices']
+
 class QuizSerializer(serializers.ModelSerializer):
+    questions = QuestionSerializer(many=True, read_only=True)
+
     class Meta:
         model = Quiz
-        fields = ['id', 'title', 'category', 'created_by', 'created_at']
+        fields = ['id', 'title', 'room_code', 'category', 'created_by', 'created_at', 'questions']
         read_only_fields = ['created_by']  # Set automatically in views
+
+class AttemptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attempt
+        fields = ['id', 'quiz', 'created_by', 'nickname', 'score', 'completed_at']
+        read_only_fields = ['created_by', 'completed_at']
 
 # 2 Regular Serializers
 class QuizStatisticsSerializer(serializers.Serializer):
