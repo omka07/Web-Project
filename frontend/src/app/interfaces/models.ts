@@ -30,6 +30,13 @@ export interface AttemptResult {
   total: number;
 }
 
+export interface LeaderboardEntry {
+  id: number;
+  nickname: string;
+  score: number;
+  completed_at: string;
+}
+
 export interface Question {
   id: number;
   text: string;

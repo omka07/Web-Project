@@ -38,4 +38,15 @@ export class LoginService {
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
   }
+
+  /**
+   * Local-only logout: drops the token and flips the signal without hitting
+   * the backend. Used by the HTTP interceptor when the server rejects our
+   * token with a 401 — calling `logout()` there would recurse through the
+   * same interceptor.
+   */
+  clearToken() {
+    localStorage.removeItem(this.TOKEN_KEY);
+    this.isAuthenticated.set(false);
+  }
 }

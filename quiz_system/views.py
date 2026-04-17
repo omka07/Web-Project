@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
@@ -66,8 +66,8 @@ def quiz_statistics(request):
 
 
 @api_view(['POST'])
-# We might want this accessible without authentication, or keep IsAuthenticated if joining requires login
-@permission_classes([IsAuthenticated])
+# Anonymous players can join — the whole point of a Kahoot-style code.
+@permission_classes([AllowAny])
 def join_room(request):
     room_code = request.data.get('room_code')
     if not room_code:
@@ -84,7 +84,7 @@ def join_room(request):
         return Response({'detail': 'Invalid Room Code'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def submit_attempt(request, pk):
     """
     Server-authoritative scoring.
@@ -160,7 +160,12 @@ def submit_attempt(request, pk):
 
 class QuizDetail(APIView):
     """CBV for Retrieve, Update, Delete Quizzes (CRUD: Read, Update, Delete)"""
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        # GET is public (players loading a quiz to take it); mutations require auth.
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_object(self, pk):
         return get_object_or_404(Quiz, pk=pk)
@@ -190,6 +195,37 @@ class QuizDetail(APIView):
             
         quiz.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def category_list(request):
+    """Public list of categories, used by the Create Quiz dropdown."""
+    categories = Category.objects.all().order_by('name')
+    serializer = CategorySerializer(categories, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def leaderboard_for_quiz(request, pk):
+    """Top attempts for a quiz. Query param: ?limit=N (default 20, capped 100)."""
+    quiz = get_object_or_404(Quiz, pk=pk)
+    try:
+        limit = max(1, min(int(request.query_params.get('limit', 20)), 100))
+    except (ValueError, TypeError):
+        limit = 20
+    top = quiz.attempts.order_by('-score', 'completed_at')[:limit]
+    data = [
+        {
+            'id': a.id,
+            'nickname': a.nickname or (a.created_by.username if a.created_by else 'anon'),
+            'score': a.score,
+            'completed_at': a.completed_at,
+        }
+        for a in top
+    ]
+    return Response(data)
 
 
 class UserScoreView(APIView):

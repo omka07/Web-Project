@@ -1,7 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AnswerSubmission, AttemptResult, Quiz, QuizStatistics, UserScore } from '../interfaces/models';
+import {
+  AnswerSubmission,
+  AttemptResult,
+  Category,
+  LeaderboardEntry,
+  Quiz,
+  QuizStatistics,
+  UserScore,
+} from '../interfaces/models';
 
 @Injectable({
   providedIn: 'root'
@@ -45,6 +53,18 @@ export class ApiService {
       `${this.baseUrl}/quizzes/${quizId}/attempt/`,
       { nickname, answers }
     );
+  }
+
+  getLeaderboard(quizId: number, limit = 20): Observable<LeaderboardEntry[]> {
+    return this.http.get<LeaderboardEntry[]>(
+      `${this.baseUrl}/quizzes/${quizId}/leaderboard/?limit=${limit}`
+    );
+  }
+
+  // --- Categories ---
+
+  getCategories(): Observable<Category[]> {
+    return this.http.get<Category[]>(`${this.baseUrl}/categories/`);
   }
 
   // --- Stats and Score ---

@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
-import { Quiz } from '../../interfaces/models';
+import { Category, Quiz } from '../../interfaces/models';
 
 @Component({
   selector: 'app-quiz-list',
@@ -28,7 +28,18 @@ import { Quiz } from '../../interfaces/models';
             <input type="text" [(ngModel)]="newQuizTitle" placeholder="Quiz Title">
           </div>
           <div class="form-group">
-            <input type="number" [(ngModel)]="newQuizCategory" placeholder="Category ID (e.g. 1)">
+            <select [(ngModel)]="newQuizCategory" [disabled]="categories.length === 0">
+              @if (categories.length === 0) {
+                <option [ngValue]="null" disabled selected>
+                  No categories yet — add one in Django admin
+                </option>
+              } @else {
+                <option [ngValue]="null" disabled selected>Pick a category…</option>
+                @for (c of categories; track c.id) {
+                  <option [ngValue]="c.id">{{ c.name }}</option>
+                }
+              }
+            </select>
           </div>
           <!-- API call #2 -->
           <button class="btn-primary" (click)="onCreateQuiz()" [disabled]="isCreating">
@@ -141,6 +152,7 @@ export class QuizListComponent implements OnInit {
   private router = inject(Router);
 
   quizzes: Quiz[] = [];
+  categories: Category[] = [];
   isLoading = true;
   isCreating = false;
   errorMessage = '';
@@ -150,6 +162,14 @@ export class QuizListComponent implements OnInit {
 
   ngOnInit() {
     this.loadQuizzes();
+    this.loadCategories();
+  }
+
+  loadCategories() {
+    this.apiService.getCategories().subscribe({
+      next: (data) => (this.categories = data),
+      error: () => (this.categories = []),
+    });
   }
 
   loadQuizzes() {
@@ -187,7 +207,7 @@ export class QuizListComponent implements OnInit {
         if (err.status === 0 || err.status >= 500) {
           this.errorMessage = 'Server error while creating quiz.';
         } else {
-          this.errorMessage = 'Failed to create quiz. Make sure Category ID exists.';
+          this.errorMessage = 'Failed to create quiz.';
         }
       }
     });

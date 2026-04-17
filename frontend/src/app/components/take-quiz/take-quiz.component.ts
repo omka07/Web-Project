@@ -1,16 +1,18 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
+import { LoginService } from '../../services/login.service';
 import { PlayerService } from '../../services/player.service';
 import { AnswerSubmission, AttemptResult, Quiz } from '../../interfaces/models';
+import { LeaderboardComponent } from '../leaderboard/leaderboard.component';
 
 const QUESTION_SECONDS = 20;
 
 @Component({
   selector: 'app-take-quiz',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink, LeaderboardComponent],
   template: `
     <div class="container take-quiz-container">
       @if (isLoading) {
@@ -79,10 +81,21 @@ const QUESTION_SECONDS = 20;
                 <p class="meta">
                   {{ result.correct_count }} correct out of {{ result.total }}
                 </p>
+
+                <div class="leaderboard-embed">
+                  <app-leaderboard [quizId]="quiz.id" [limit]="5" [showBackLink]="false" />
+                  <a class="full-link" [routerLink]="['/quiz', quiz.id, 'leaderboard']">
+                    View full leaderboard &rarr;
+                  </a>
+                </div>
               } @else {
                 <p class="meta">Your score couldn't be saved to the server.</p>
               }
-              <button class="btn-primary" (click)="goBack()">Back to Quizzes</button>
+              <div class="actions-row">
+                <button class="btn-primary" (click)="goBack()">
+                  {{ backLabel() }}
+                </button>
+              </div>
             </div>
           }
         </div>
@@ -144,6 +157,19 @@ const QUESTION_SECONDS = 20;
       margin: 0.5rem 0;
     }
     .hint, .meta { color: #6c757d; margin: 0.25rem 0; }
+    .leaderboard-embed {
+      margin: 2rem auto 0;
+      max-width: 420px;
+    }
+    .full-link {
+      display: block;
+      margin-top: 0.75rem;
+      color: #3498db;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .full-link:hover { text-decoration: underline; }
+    .actions-row { margin-top: 1.5rem; }
   `]
 })
 export class TakeQuizComponent implements OnInit, OnDestroy {
@@ -151,6 +177,7 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private apiService = inject(ApiService);
   private playerService = inject(PlayerService);
+  private loginService = inject(LoginService);
 
   quiz: Quiz | null = null;
   isLoading = true;
@@ -223,7 +250,17 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
   }
 
   goBack() {
-    this.router.navigate(['/quizzes']);
+    // Hosts go back to their quiz list; anonymous players return to the
+    // Join screen so they can play another round.
+    if (this.loginService.isAuthenticated()) {
+      this.router.navigate(['/quizzes']);
+    } else {
+      this.router.navigate(['/join']);
+    }
+  }
+
+  backLabel(): string {
+    return this.loginService.isAuthenticated() ? 'Back to Quizzes' : 'Join another room';
   }
 
   private startTimerForCurrent() {
