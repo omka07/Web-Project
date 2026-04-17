@@ -12,6 +12,7 @@ import { Quiz } from '../../interfaces/models';
     <div class="container">
       <div class="header-section">
         <h2>Available Quizzes</h2>
+        <button class="btn-primary" (click)="joinRoom()">Join a room</button>
       </div>
 
       @if (errorMessage) {
@@ -183,5 +184,9 @@ export class QuizListComponent implements OnInit {
 
   viewQuiz(id: number) {
     this.router.navigate(['/quiz', id]);
+  }
+
+  joinRoom() {
+    this.router.navigate(['/join']);
   }
 }
