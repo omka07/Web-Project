@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 
 from .models import Quiz, Category, Attempt, Question, Choice
 from .serializers import (
@@ -29,6 +31,23 @@ def _score_for_answer(choice: Choice | None, response_time_ms: int) -> int:
     rt = max(0, min(int(response_time_ms or 0), QUESTION_TIME_LIMIT_MS))
     remaining_ratio = (QUESTION_TIME_LIMIT_MS - rt) / QUESTION_TIME_LIMIT_MS
     return round(BASE_POINTS + SPEED_BONUS * remaining_ratio)
+
+
+# --- Auth ---
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    """Blacklist a JWT refresh token so it can't mint new access tokens."""
+    refresh = request.data.get('refresh')
+    if not refresh:
+        return Response({'detail': 'Refresh token is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        RefreshToken(refresh).blacklist()
+    except TokenError:
+        # Already expired or invalid — treat logout as success either way.
+        pass
+    return Response(status=status.HTTP_205_RESET_CONTENT)
 
 # 2 Function-Based Views (FBV)
 

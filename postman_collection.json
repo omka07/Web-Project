@@ -1,201 +1,425 @@
 {
   "info": {
-    "name": "Quiz System API",
-    "description": "Postman Collection for the Quiz System Django Backend.",
+    "name": "QuizRoom API",
+    "description": "Full API surface for the QuizRoom Django + Angular project. Login first — the collection's test script stores the JWT access/refresh tokens as variables so every other request inherits Bearer auth.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "base_url", "value": "http://localhost:8000/api", "type": "string"},
+    {"key": "access_token", "value": "", "type": "string"},
+    {"key": "refresh_token", "value": "", "type": "string"}
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{access_token}}", "type": "string"}]
   },
   "item": [
     {
       "name": "Authentication",
       "item": [
         {
-          "name": "Login",
+          "name": "Login (obtain JWT pair)",
           "request": {
+            "auth": {"type": "noauth"},
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"adminpassword\"\n}"
-            },
-            "url": {
-              "raw": "http://localhost:8000/api/auth/login/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8000",
-              "path": ["api", "auth", "login/"]
-            }
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"username\": \"demo\",\n  \"password\": \"demo12345\"\n}"},
+            "url": {"raw": "{{base_url}}/auth/login/", "host": ["{{base_url}}"], "path": ["auth", "login", ""]}
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.collectionVariables.set('access_token', data.access);",
+                  "  pm.collectionVariables.set('refresh_token', data.refresh);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "response": [
             {
-              "name": "Successful Login",
+              "name": "200 OK",
               "originalRequest": {
                 "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"adminpassword\"\n}"
-                },
-                "url": {
-                  "raw": "http://localhost:8000/api/auth/login/",
-                  "protocol": "http",
-                  "host": ["localhost"],
-                  "port": "8000",
-                  "path": ["api", "auth", "login/"]
-                }
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {"mode": "raw", "raw": "{\"username\":\"demo\",\"password\":\"demo12345\"}"},
+                "url": {"raw": "{{base_url}}/auth/login/", "host": ["{{base_url}}"], "path": ["auth", "login", ""]}
               },
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"token\": \"9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b\"\n}"
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"access\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.xxx.yyy\",\n  \"refresh\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.aaa.bbb\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {"mode": "raw", "raw": "{\"username\":\"demo\",\"password\":\"wrong\"}"},
+                "url": {"raw": "{{base_url}}/auth/login/", "host": ["{{base_url}}"], "path": ["auth", "login", ""]}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"detail\": \"No active account found with the given credentials\"\n}"
             }
           ]
         },
         {
-          "name": "Logout",
+          "name": "Refresh access token",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"},
+            "url": {"raw": "{{base_url}}/auth/refresh/", "host": ["{{base_url}}"], "path": ["auth", "refresh", ""]}
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('access_token', pm.response.json().access);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {"mode": "raw", "raw": "{\"refresh\":\"<refresh>\"}"},
+                "url": {"raw": "{{base_url}}/auth/refresh/", "host": ["{{base_url}}"], "path": ["auth", "refresh", ""]}
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"access\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.newaccess.yyy\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout (blacklist refresh)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Token {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8000/api/auth/logout/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8000",
-              "path": ["api", "auth", "logout/"]
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"},
+            "url": {"raw": "{{base_url}}/auth/logout/", "host": ["{{base_url}}"], "path": ["auth", "logout", ""]}
+          },
+          "response": [
+            {
+              "name": "205 Reset Content",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Authorization", "value": "Bearer <access>"}
+                ],
+                "body": {"mode": "raw", "raw": "{\"refresh\":\"<refresh>\"}"},
+                "url": {"raw": "{{base_url}}/auth/logout/", "host": ["{{base_url}}"], "path": ["auth", "logout", ""]}
+              },
+              "status": "Reset Content",
+              "code": 205,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "cookie": [],
+              "body": ""
             }
-          }
+          ]
         }
       ]
     },
     {
-      "name": "Quizzes",
+      "name": "Categories",
       "item": [
         {
-          "name": "List Quizzes",
+          "name": "List categories",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Token {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8000/api/quizzes/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8000",
-              "path": ["api", "quizzes/"]
-            }
+            "header": [],
+            "url": {"raw": "{{base_url}}/categories/", "host": ["{{base_url}}"], "path": ["categories", ""]}
           },
           "response": [
             {
-              "name": "Quizzes List",
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer <access>"}],
+                "url": {"raw": "{{base_url}}/categories/", "host": ["{{base_url}}"], "path": ["categories", ""]}
+              },
               "status": "OK",
               "code": 200,
-              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Angular Basics\",\n    \"category\": 1,\n    \"created_by\": 1,\n    \"created_at\": \"2023-10-24T12:00:00Z\"\n  }\n]"
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"General Knowledge\",\n    \"description\": \"Sample trivia for the demo quiz.\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Quizzes (CRUD)",
+      "item": [
+        {
+          "name": "List quizzes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{base_url}}/quizzes/", "host": ["{{base_url}}"], "path": ["quizzes", ""]}
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer <access>"}],
+                "url": {"raw": "{{base_url}}/quizzes/", "host": ["{{base_url}}"], "path": ["quizzes", ""]}
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Kahoot-style Demo\",\n    \"room_code\": \"3R7K2P\",\n    \"category\": 1,\n    \"created_by\": 1,\n    \"created_at\": \"2026-04-18T10:00:00Z\",\n    \"questions\": [\n      {\n        \"id\": 1,\n        \"text\": \"What is the capital of France?\",\n        \"choices\": [\n          {\"id\": 1, \"text\": \"Berlin\"},\n          {\"id\": 2, \"text\": \"Madrid\"},\n          {\"id\": 3, \"text\": \"Paris\"},\n          {\"id\": 4, \"text\": \"Rome\"}\n        ]\n      }\n    ]\n  }\n]"
             }
           ]
         },
         {
-          "name": "Create Quiz",
+          "name": "Create quiz",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Token {{token}}"
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"title\": \"My new quiz\",\n  \"category\": 1\n}"},
+            "url": {"raw": "{{base_url}}/quizzes/", "host": ["{{base_url}}"], "path": ["quizzes", ""]}
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Authorization", "value": "Bearer <access>"}
+                ],
+                "body": {"mode": "raw", "raw": "{\"title\":\"My new quiz\",\"category\":1}"},
+                "url": {"raw": "{{base_url}}/quizzes/", "host": ["{{base_url}}"], "path": ["quizzes", ""]}
               },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"New Quiz\",\n  \"category\": 1\n}"
-            },
-            "url": {
-              "raw": "http://localhost:8000/api/quizzes/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8000",
-              "path": ["api", "quizzes/"]
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"id\": 2,\n  \"title\": \"My new quiz\",\n  \"room_code\": \"X9P4KM\",\n  \"category\": 1,\n  \"created_by\": 1,\n  \"created_at\": \"2026-04-18T10:05:00Z\",\n  \"questions\": []\n}"
             }
-          }
+          ]
         },
         {
-          "name": "Get Quiz Detail",
+          "name": "Get quiz detail",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Token {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8000/api/quizzes/1/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8000",
-              "path": ["api", "quizzes", "1/"]
+            "header": [],
+            "url": {"raw": "{{base_url}}/quizzes/1/", "host": ["{{base_url}}"], "path": ["quizzes", "1", ""]}
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {"raw": "{{base_url}}/quizzes/1/", "host": ["{{base_url}}"], "path": ["quizzes", "1", ""]}
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Kahoot-style Demo\",\n  \"room_code\": \"3R7K2P\",\n  \"category\": 1,\n  \"created_by\": 1,\n  \"created_at\": \"2026-04-18T10:00:00Z\",\n  \"questions\": [\n    {\n      \"id\": 1,\n      \"text\": \"What is the capital of France?\",\n      \"choices\": [\n        {\"id\": 1, \"text\": \"Berlin\"},\n        {\"id\": 2, \"text\": \"Madrid\"},\n        {\"id\": 3, \"text\": \"Paris\"},\n        {\"id\": 4, \"text\": \"Rome\"}\n      ]\n    }\n  ]\n}"
             }
-          }
+          ]
         },
         {
-          "name": "Update Quiz",
+          "name": "Update quiz",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Token {{token}}"
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"title\": \"Updated title\",\n  \"category\": 1\n}"},
+            "url": {"raw": "{{base_url}}/quizzes/1/", "host": ["{{base_url}}"], "path": ["quizzes", "1", ""]}
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Authorization", "value": "Bearer <access>"}
+                ],
+                "body": {"mode": "raw", "raw": "{\"title\":\"Updated title\",\"category\":1}"},
+                "url": {"raw": "{{base_url}}/quizzes/1/", "host": ["{{base_url}}"], "path": ["quizzes", "1", ""]}
               },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated Quiz Title\",\n  \"category\": 1\n}"
-            },
-            "url": {
-              "raw": "http://localhost:8000/api/quizzes/1/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8000",
-              "path": ["api", "quizzes", "1/"]
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Updated title\",\n  \"room_code\": \"3R7K2P\",\n  \"category\": 1,\n  \"created_by\": 1,\n  \"created_at\": \"2026-04-18T10:00:00Z\",\n  \"questions\": []\n}"
             }
-          }
+          ]
         },
         {
-          "name": "Delete Quiz",
+          "name": "Delete quiz",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Token {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8000/api/quizzes/1/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8000",
-              "path": ["api", "quizzes", "1/"]
+            "header": [],
+            "url": {"raw": "{{base_url}}/quizzes/1/", "host": ["{{base_url}}"], "path": ["quizzes", "1", ""]}
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [{"key": "Authorization", "value": "Bearer <access>"}],
+                "url": {"raw": "{{base_url}}/quizzes/1/", "host": ["{{base_url}}"], "path": ["quizzes", "1", ""]}
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "cookie": [],
+              "body": ""
             }
-          }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sessions (Join)",
+      "item": [
+        {
+          "name": "Join room by code",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"room_code\": \"3R7K2P\"\n}"},
+            "url": {"raw": "{{base_url}}/quizzes/join/", "host": ["{{base_url}}"], "path": ["quizzes", "join", ""]}
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {"mode": "raw", "raw": "{\"room_code\":\"3R7K2P\"}"},
+                "url": {"raw": "{{base_url}}/quizzes/join/", "host": ["{{base_url}}"], "path": ["quizzes", "join", ""]}
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"quiz_id\": 1,\n  \"title\": \"Kahoot-style Demo\",\n  \"room_code\": \"3R7K2P\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {"mode": "raw", "raw": "{\"room_code\":\"XXXXXX\"}"},
+                "url": {"raw": "{{base_url}}/quizzes/join/", "host": ["{{base_url}}"], "path": ["quizzes", "join", ""]}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"detail\": \"Invalid Room Code\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Attempts",
+      "item": [
+        {
+          "name": "Submit attempt (server computes score)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"nickname\": \"alice\",\n  \"answers\": [\n    {\"question_id\": 1, \"choice_id\": 3, \"response_time_ms\": 1450},\n    {\"question_id\": 2, \"choice_id\": 5, \"response_time_ms\": 3200},\n    {\"question_id\": 3, \"choice_id\": null, \"response_time_ms\": 20000}\n  ]\n}"},
+            "url": {"raw": "{{base_url}}/quizzes/1/attempt/", "host": ["{{base_url}}"], "path": ["quizzes", "1", "attempt", ""]}
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {"mode": "raw", "raw": "{\"nickname\":\"alice\",\"answers\":[]}"},
+                "url": {"raw": "{{base_url}}/quizzes/1/attempt/", "host": ["{{base_url}}"], "path": ["quizzes", "1", "attempt", ""]}
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"id\": 42,\n  \"score\": 1420,\n  \"correct_count\": 2,\n  \"total\": 3\n}"
+            }
+          ]
+        },
+        {
+          "name": "Leaderboard for quiz",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/quizzes/1/leaderboard/?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["quizzes", "1", "leaderboard", ""],
+              "query": [{"key": "limit", "value": "20"}]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/quizzes/1/leaderboard/?limit=20",
+                  "host": ["{{base_url}}"],
+                  "path": ["quizzes", "1", "leaderboard", ""],
+                  "query": [{"key": "limit", "value": "20"}]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "[\n  {\"id\": 42, \"nickname\": \"alice\", \"score\": 1420, \"completed_at\": \"2026-04-18T10:10:00Z\"},\n  {\"id\": 41, \"nickname\": \"bob\",   \"score\": 900,  \"completed_at\": \"2026-04-18T10:08:00Z\"}\n]"
+            }
+          ]
         }
       ]
     },
@@ -203,42 +427,52 @@
       "name": "Statistics",
       "item": [
         {
-          "name": "Quiz Stats",
+          "name": "Quiz system stats",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Token {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8000/api/quizzes/stats/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8000",
-              "path": ["api", "quizzes", "stats/"]
+            "header": [],
+            "url": {"raw": "{{base_url}}/quizzes/stats/", "host": ["{{base_url}}"], "path": ["quizzes", "stats", ""]}
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer <access>"}],
+                "url": {"raw": "{{base_url}}/quizzes/stats/", "host": ["{{base_url}}"], "path": ["quizzes", "stats", ""]}
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"total_quizzes\": 3,\n  \"total_attempts\": 17\n}"
             }
-          }
+          ]
         },
         {
-          "name": "User Score",
+          "name": "Current user's total score",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Token {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8000/api/user/score/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8000",
-              "path": ["api", "user", "score/"]
+            "header": [],
+            "url": {"raw": "{{base_url}}/user/score/", "host": ["{{base_url}}"], "path": ["user", "score", ""]}
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer <access>"}],
+                "url": {"raw": "{{base_url}}/user/score/", "host": ["{{base_url}}"], "path": ["user", "score", ""]}
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "cookie": [],
+              "body": "{\n  \"username\": \"demo\",\n  \"total_score\": 1420\n}"
             }
-          }
+          ]
         }
       ]
     }
