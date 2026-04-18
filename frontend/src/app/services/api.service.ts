@@ -1,16 +1,23 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Quiz, QuizStatistics, UserScore } from '../interfaces/models';
+import { environment } from '../../environments/environment';
+import {
+  AnswerSubmission,
+  AttemptResult,
+  Category,
+  LeaderboardEntry,
+  Quiz,
+  QuizStatistics,
+  UserScore,
+} from '../interfaces/models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
   private http = inject(HttpClient);
-  private baseUrl = 'http://localhost:8000/api';
-
-  // --- Quizzes ---
+  private baseUrl = environment.apiBaseUrl;
 
   getQuizzes(): Observable<Quiz[]> {
     return this.http.get<Quiz[]>(`${this.baseUrl}/quizzes/`);
@@ -36,11 +43,26 @@ export class ApiService {
     return this.http.post<any>(`${this.baseUrl}/quizzes/join/`, { room_code });
   }
 
-  submitAttempt(quizId: number, score: number, nickname: string): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/quizzes/${quizId}/attempt/`, { score, nickname });
+  submitAnswers(
+    quizId: number,
+    nickname: string,
+    answers: AnswerSubmission[]
+  ): Observable<AttemptResult> {
+    return this.http.post<AttemptResult>(
+      `${this.baseUrl}/quizzes/${quizId}/attempt/`,
+      { nickname, answers }
+    );
   }
 
-  // --- Stats and Score ---
+  getLeaderboard(quizId: number, limit = 20): Observable<LeaderboardEntry[]> {
+    return this.http.get<LeaderboardEntry[]>(
+      `${this.baseUrl}/quizzes/${quizId}/leaderboard/?limit=${limit}`
+    );
+  }
+
+  getCategories(): Observable<Category[]> {
+    return this.http.get<Category[]>(`${this.baseUrl}/categories/`);
+  }
 
   getQuizStats(): Observable<QuizStatistics> {
     return this.http.get<QuizStatistics>(`${this.baseUrl}/quizzes/stats/`);

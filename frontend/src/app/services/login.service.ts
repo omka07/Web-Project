@@ -1,41 +1,55 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+interface JwtPair {
+  access: string;
+  refresh: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoginService {
   private http = inject(HttpClient);
-  private authUrl = 'http://localhost:8000/api/auth';
-  private readonly TOKEN_KEY = 'auth_token';
+  private authUrl = `${environment.apiBaseUrl}/auth`;
+  private readonly ACCESS_KEY = 'auth_access';
+  private readonly REFRESH_KEY = 'auth_refresh';
 
-  // Using Angular 16+ signals for reactive state
   isAuthenticated = signal<boolean>(this.hasToken());
 
   private hasToken(): boolean {
-    return !!localStorage.getItem(this.TOKEN_KEY);
+    return !!localStorage.getItem(this.ACCESS_KEY);
   }
 
-  login(credentials: { username: string; password: string }): Observable<{ token: string }> {
-    return this.http.post<{ token: string }>(`${this.authUrl}/login/`, credentials).pipe(
-      tap(response => {
-        localStorage.setItem(this.TOKEN_KEY, response.token);
+  login(credentials: { username: string; password: string }): Observable<JwtPair> {
+    return this.http.post<JwtPair>(`${this.authUrl}/login/`, credentials).pipe(
+      tap(res => {
+        localStorage.setItem(this.ACCESS_KEY, res.access);
+        localStorage.setItem(this.REFRESH_KEY, res.refresh);
         this.isAuthenticated.set(true);
       })
     );
   }
 
   logout(): Observable<any> {
-    return this.http.post(`${this.authUrl}/logout/`, {}).pipe(
-      tap(() => {
-        localStorage.removeItem(this.TOKEN_KEY);
-        this.isAuthenticated.set(false);
+    const refresh = localStorage.getItem(this.REFRESH_KEY);
+    return this.http.post(`${this.authUrl}/logout/`, { refresh }).pipe(
+      tap({
+        next: () => this.clearToken(),
+        error: () => this.clearToken(),
       })
     );
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    return localStorage.getItem(this.ACCESS_KEY);
+  }
+
+  clearToken() {
+    localStorage.removeItem(this.ACCESS_KEY);
+    localStorage.removeItem(this.REFRESH_KEY);
+    this.isAuthenticated.set(false);
   }
 }

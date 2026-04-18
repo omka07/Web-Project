@@ -1,52 +1,113 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { LoginService } from '../../services/login.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <div class="card login-card">
-      <h2>Login to Quiz System</h2>
-      
+      <h2>Sign in</h2>
+      <p class="sub">Log in to manage quizzes.</p>
+
       @if (errorMessage) {
         <div class="error-msg">{{ errorMessage }}</div>
       }
-      
+
       <div class="form-group">
-        <label>Username</label>
-        <input type="text" [(ngModel)]="username" placeholder="Enter username">
+        <label for="login-username">Username</label>
+        <input
+          id="login-username"
+          type="text"
+          [(ngModel)]="username"
+          (keydown.enter)="onLogin()"
+          placeholder="Your username"
+          autocomplete="username"
+        >
       </div>
-      
+
       <div class="form-group">
-        <label>Password</label>
-        <input type="password" [(ngModel)]="password" placeholder="Enter password">
+        <label for="login-password">Password</label>
+        <input
+          id="login-password"
+          type="password"
+          [(ngModel)]="password"
+          (keydown.enter)="onLogin()"
+          placeholder="••••••••"
+          autocomplete="current-password"
+        >
       </div>
-      
-      <!-- API call #1 -->
-      <button (click)="onLogin()" [disabled]="isLoading">
+
+      <button class="btn-primary full-width" (click)="onLogin()" [disabled]="isLoading">
         @if (isLoading) {
-          Loading...
+          <span class="spinner inline"></span>Signing in…
         } @else {
-          Login
+          Sign in
         }
       </button>
+
+      <div class="divider"><span>or</span></div>
+
+      <a routerLink="/join" class="player-link">
+        Join a room as a player &rarr;
+      </a>
     </div>
   `,
   styles: [`
     .login-card {
       max-width: 400px;
-      margin: 2rem auto;
+      margin: 3rem auto;
       padding: 2rem;
     }
+    h2 { margin-bottom: 0.25rem; }
+    .sub {
+      color: var(--color-text-muted);
+      margin: 0 0 1.5rem;
+    }
     .error-msg {
-      color: #dc3545;
+      color: var(--color-danger);
       margin-bottom: 1rem;
+      padding: 0.6rem 0.75rem;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+    }
+    .full-width { width: 100%; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 1.5rem 0 1rem;
+      color: var(--color-text-muted);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .divider span { padding: 0 0.75rem; }
+
+    .player-link {
+      display: block;
+      text-align: center;
+      color: var(--color-primary);
+      text-decoration: none;
+      font-weight: 500;
       padding: 0.5rem;
-      background: #f8d7da;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
+      transition: background-color var(--transition-fast);
+    }
+    .player-link:hover {
+      background-color: var(--color-primary-ring);
+      text-decoration: none;
     }
   `]
 })
@@ -60,11 +121,11 @@ export class LoginComponent {
   errorMessage = '';
 
   onLogin() {
-    if (!this.username || !this.password) return;
-    
+    if (!this.username || !this.password || this.isLoading) return;
+
     this.isLoading = true;
     this.errorMessage = '';
-    
+
     this.loginService.login({ username: this.username, password: this.password }).subscribe({
       next: () => {
         this.isLoading = false;
