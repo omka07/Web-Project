@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
+ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
@@ -58,10 +58,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = _env_list(
-    'CORS_ALLOWED_ORIGINS',
-    'http://localhost:4200,http://127.0.0.1:4200',
-)
+CORS_ALLOW_ALL_ORIGINS = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
