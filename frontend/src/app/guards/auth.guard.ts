@@ -9,6 +9,5 @@ export const authGuard: CanActivateFn = () => {
   if (loginService.isAuthenticated()) {
     return true;
   }
-  // Redirect as a UrlTree so the guarded component never briefly mounts.
   return router.createUrlTree(['/login']);
 };

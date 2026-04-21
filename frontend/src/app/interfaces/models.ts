@@ -13,8 +13,6 @@ export interface Category {
 export interface Choice {
   id: number;
   text: string;
-  // `is_correct` is intentionally absent: the backend no longer exposes it
-  // to clients so players can't peek at the answer.
 }
 
 export interface AnswerSubmission {
